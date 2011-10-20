@@ -15,7 +15,6 @@ object BuildSettings {
     parallelExecution := true,
     retrieveManaged := true,
     autoCompilerPlugins := true,
-    initialCommands := "", 
     externalResolvers <<= resolvers map { rs =>
       Resolver.withDefaultResolvers(rs, mavenCentral = true, scalaTools = true)},
 
@@ -119,8 +118,6 @@ object Dependencies {
   val specsVersion = "1.6.9"
   val specs2Version = "1.4"
   val elasticSearchVersion = "0.16.1"
-  val jettyVersion = "8.0.0.M3"
-  val jettyServletApi = "3.0.20100224"
   val gfServletApi = "3.1"
   val parboiledVersion = "1.0.0"
   val jedisVersion = "1.5.2"
@@ -181,11 +178,20 @@ object Dependencies {
 
   val neo4j = "org.neo4j" % "neo4j" % "1.5.M01"
 
+  val jettisonJson = "org.codehaus.jettison" % "jettison" % "1.3"
+
   val jdom = "org.jdom"                % "jdom"                % "1.1"
   val jaxen = "jaxen"                  % "jaxen"               % "1.1.1"
 
-}
+  val commonsIo = "commons-io" % "commons-io" % "2.0.1"
 
+  val javaxServlet = "javax.servlet" % "servlet-api" % "2.5" % "provided"
+
+  val jettyVersion = "8.0.0.M3"
+  val jetty = "org.eclipse.jetty" % "jetty-webapp" % jettyVersion % "container"
+
+
+}
 
 object Metaproject extends Build {
 
@@ -205,16 +211,15 @@ object Metaproject extends Build {
     junit4, 
     scalazCore,
     scalaj, 
-    specs %"provided->default",
-    neo4j
+    specs %"provided->default"
   )
 
   val webDeps = Seq(
-    liftWebkit, 
-    liftMapper, 
+    liftWebkit,
+    liftMapper,
     liftWizard,
-    "org.mortbay.jetty" % "jetty" % "6.1.22" % "jetty",
-    "javax.servlet" % "servlet-api" % "2.5" % "provided->default"
+    jetty,
+    javaxServlet 
   )
 
   val printClasspath = TaskKey[File]("print-class-path")
@@ -229,32 +234,47 @@ object Metaproject extends Build {
   }
 
 
-  // override def consoleInit =  consoleInitStr
+  lazy val giraphe:Project = Project(
+    id = "giraphe", 
+    base = file("giraphe"), 
+    settings = buildSettings ++ Seq (
+      libraryDependencies := commonDeps ++ Seq(neo4j, jettisonJson, commonsIo, javaxServlet)
+    )) 
 
   lazy val acsCommons:Project = Project(
     id = "acs-commons", 
     base = file("acs-commons"), 
     settings = buildSettings ++ Seq (
       libraryDependencies := commonDeps
-    )) 
+    )) aggregate (giraphe)
 
-  val hiproConsole = """
-  |import cc.hp.probability._
-  |import cc.hp.tutorials._
-  |
-  |import scalaz._
-  |import Scalaz._
-  |
-  |println("Highly Programmable...")
-  """.stripMargin 
- 
-  lazy val highlyProbably:Project = Project(
-    id = "highly-probable", 
-    base = file("highly-probable"), 
+  lazy val graphLabScala:Project = Project(
+    id = "graphlab-in-scala", 
+    base = file("graphlab-in-scala"), 
     settings = buildSettings ++ Seq (
-      libraryDependencies := commonDeps, 
-      initialCommands := hiproConsole
-    )) 
+      libraryDependencies := commonDeps
+    )) dependsOn(giraphe % "compile;test->test")
+
+
+  lazy val highlyProbably:Project = {
+    val hiproConsole = """
+    |import cc.hp.probability._
+    |import cc.hp.tutorials._
+    |
+    |import scalaz._
+    |import Scalaz._
+    |
+    |println("Highly Programmable...")
+    """.stripMargin 
+
+    Project(
+      id = "highly-probable", 
+      base = file("highly-probable"), 
+      settings = buildSettings ++ Seq (
+        libraryDependencies := commonDeps, 
+        initialCommands := hiproConsole
+      )) 
+  }
 
 }
 

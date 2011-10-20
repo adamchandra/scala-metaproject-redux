@@ -24,6 +24,7 @@ project/build/target
 project/plugins/target
 project/plugins/lib_managed
 project/plugins/src_managed
+.lib
 
 # ignore sbt in subprojects
 **/target
