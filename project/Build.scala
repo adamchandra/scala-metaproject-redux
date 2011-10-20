@@ -15,14 +15,11 @@ object BuildSettings {
     parallelExecution := true,
     retrieveManaged := true,
     autoCompilerPlugins := true,
-    externalResolvers <<= resolvers map { rs =>
-      Resolver.withDefaultResolvers(rs, mavenCentral = true, scalaTools = true)},
-
+    externalResolvers <<= resolvers map { rs => Resolver.withDefaultResolvers(rs, mavenCentral = true, scalaTools = true)},
     moduleConfigurations ++= Resolvers.moduleConfigurations,
     javacOptions ++= Seq("-Xlint:unchecked"),
     publishTo := Some(Resolvers.IESLSnapshotRepo),
     publishArtifact in (Compile, packageDoc) := false,
-    credentials += Credentials(Path.userHome / ".ivy2" / ".credentials"),
     scalacOptions ++= Seq("-deprecation", "-unchecked", "-Xcheckinit", "-encoding", "utf8"),
     shellPrompt := ShellPrompt.buildShellPrompt)
 }
@@ -234,17 +231,38 @@ object Metaproject extends Build {
   }
 
 
+  lazy val publishSettings = {
+    lazy val publishSetting = publishTo <<= (version) {
+      version: String =>
+        def repo(name: String) = name at "http://iesl.cs.umass.edu:8081/nexus/content/repositories/" + name
+      val isSnapshot = version.trim.endsWith("SNAPSHOT")
+      val repoName   = if(isSnapshot) "snapshots" else "releases"
+      Some(repo(repoName))
+    }
+    
+    lazy val credentialsSetting = credentials += {
+      Seq("build.publish.user", "build.publish.password").map(k => Option(System.getProperty(k))) match {
+        case Seq(Some(user), Some(pass)) =>
+          Credentials("Sonatype Nexus Repository Manager", "iesl.cs.umass.edu", user, pass)
+        case _ =>
+          Credentials(Path.userHome / ".ivy2" / ".credentials")
+      }
+    }
+
+    Seq(publishSetting, credentialsSetting)
+  }
+
   lazy val giraphe:Project = Project(
     id = "giraphe", 
     base = file("giraphe"), 
-    settings = buildSettings ++ Seq (
+    settings = buildSettings ++ publishSettings ++ Seq (
       libraryDependencies := commonDeps ++ Seq(neo4j, jettisonJson, commonsIo, javaxServlet)
     )) 
 
   lazy val acsCommons:Project = Project(
     id = "acs-commons", 
     base = file("acs-commons"), 
-    settings = buildSettings ++ Seq (
+    settings = buildSettings ++ publishSettings ++ Seq (
       libraryDependencies := commonDeps
     )) aggregate (giraphe)
 
