@@ -26,7 +26,6 @@ object BuildSettings {
 
 
 object ShellPrompt {
- 
   object devnull extends ProcessLogger {
     def info (s: => String) {}
     def error (s: => String) { }
@@ -40,12 +39,11 @@ object ShellPrompt {
   
   val buildShellPrompt = {
     (state: State) => {
-      val currBranch = hgBranch
+      val currBranch = gitBranches
       val currProject = Project.extract (state).currentProject.id
       "%s:%s:%s> ".format (currBranch, currProject, BuildSettings.buildVersion)
     }
   }
- 
 }
 
 object Resolvers {
@@ -100,8 +98,7 @@ object Resolvers {
     ModuleConfiguration("org.multiverse", CodehausRepo),
     ModuleConfiguration("org.scala-tools", "time", CasbahSnapshotRepo),
     ModuleConfiguration("org.scalatest", ScalaToolsReleases),
-    ModuleConfiguration("org.scalaz", ScalaToolsSnapshots),
-    ModuleConfiguration("cc.factorie", LocalM2)
+    ModuleConfiguration("org.scalaz", ScalaToolsSnapshots)
   )
 }
 
@@ -163,27 +160,19 @@ object Dependencies {
 
   val scalazCore = "org.scalaz" %% "scalaz-core" % "6.0.3-SNAPSHOT"
   // val scalazHttp = "org.scalaz" % "scalaz-http" % "6.0.2-SNAPSHOT"
-
   val scalaj = "org.scalaj" %%  "scalaj-collection" % "1.2"
-
   val factorie = "cc.factorie" % "factorie" % "0.10.1-SNAPSHOT"
   val casbahCore = "com.mongodb.casbah" % "casbah-core_2.9.0-1" % "2.1.5.0"
   val casbahCommons = "com.mongodb.casbah" % "casbah-commons_2.9.0-1" % "2.1.5.0"
   val casbahQuery = "com.mongodb.casbah" % "casbah-query_2.9.0-1" % "2.1.5.0"
   val junit4 = "junit" % "junit" % "4.4"
   // val = "bibtex" % "bibtex" % "20040801"
-
   val neo4j = "org.neo4j" % "neo4j" % "1.5.M01"
-
   val jettisonJson = "org.codehaus.jettison" % "jettison" % "1.3"
-
   val jdom = "org.jdom"                % "jdom"                % "1.1"
   val jaxen = "jaxen"                  % "jaxen"               % "1.1.1"
-
   val commonsIo = "commons-io" % "commons-io" % "2.0.1"
-
   val javaxServlet = "javax.servlet" % "servlet-api" % "2.5" % "provided"
-
   val jettyVersion = "8.0.0.M3"
   val jetty = "org.eclipse.jetty" % "jetty-webapp" % jettyVersion % "container"
 
